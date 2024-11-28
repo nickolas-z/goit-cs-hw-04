@@ -3,7 +3,7 @@ import threading
 import multiprocessing
 import time
 from typing import List, Dict
-from file_generator import create_test_files_and_folders, Methods
+from file_generator import create_test_files_and_folders, find_all_files, Methods
 
 
 def search_keywords_in_file(
@@ -168,17 +168,24 @@ def parallel_file_search_multiprocessing(
 
 
 def main():
-    # Generate test files
-    print("Generating test files...")
-    file_paths = create_test_files_and_folders(
-        num_files=1000, parallel_method=Methods.MULTIPROCESSING
-    )
-    print(f"Created {len(file_paths)} files")
+    # Find test files
+    print("Finding test files...")
+    file_paths = find_all_files()
+    if not file_paths:
+        print("Files not found, generating...")
+        file_paths = create_test_files_and_folders(
+            num_files=1000, parallel_method=Methods.MULTIPROCESSING
+        )
+        print(f"Created {len(file_paths)} files")
+    else:
+        print(f"Found {len(file_paths)} files")
 
     # Keywords to search for
     keywords = ["python", "data", "algorithm"]
+    print(f"\nKeywords to search: {keywords}")
 
-    print("\nSearch using threads:")
+    print(f"\n{'=' * 80}")
+    print("Search using threads:")
     start_time = time.time()
     threading_results = parallel_file_search_threading(file_paths, keywords)
     threading_time = time.time() - start_time
@@ -188,7 +195,8 @@ def main():
         print(f"{keyword}: found in {len(locations)} places")
     print(f"Execution time (Threading): {threading_time:.4f} seconds")
 
-    print("\nSearch using processes:")
+    print(f"\n{'=' * 80}")
+    print("Search using processes:")
     start_time = time.time()
     multiprocessing_results = parallel_file_search_multiprocessing(file_paths, keywords)
     multiprocessing_time = time.time() - start_time

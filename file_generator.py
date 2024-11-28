@@ -199,6 +199,19 @@ def create_test_files_and_folders(
 
     return all_created_files
 
+def find_all_files(base_dir: str = "test_search_files") -> List[str]:
+    """
+    Find all files in the given directory.
+    params:
+        base_dir: Base directory to search for files
+    return:
+        List of all found file paths
+    """
+    all_files = []
+    for root, _, files in os.walk(base_dir):
+        for file in files:
+            all_files.append(os.path.join(root, file))
+    return all_files
 
 def main():
     # Demonstration of parallel file creation
