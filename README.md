@@ -1,4 +1,4 @@
-# goit-cs-hw-03
+# goit-cs-hw-04
 Тема 8. Основи багатопроцесорного програмування
 
 Перед початком роботи:
@@ -29,8 +29,45 @@
 - Забезпечено обробку помилок і винятків, особливо при роботі з файловою системою.
 - Обидві версії програми повертають словник, де ключ — це пошукове слово, а значення — список шляхів файлів, де це слово знайдено.
 
+### Запуск та перевірка
+Запуск демонстрації відбувається за допомогою `main.py`. Скрипт перевіряє чи створена тестова папка `test_search_files` з файлами
+та показує результати пошуку. Якщо папку не знайдено, то запускається функція-генератор файлів `create_test_files_and_folders`, що генерує 1000 файлів у різних підпапках (генератор теж може працювати в різних режимах багатопотоковості). Така кількість файлів або більша, дозволяє наочніше продемонструвати ефективність підходів.
+Далі запускається пошук по файлах за допомогою двох функцій, які демонструють два підходи паралелелізму, та виводять результати роботи:
+- `parallel_file_search_threading`
+- `parallel_file_search_multiprocessing`
+
+**Результат обробки 100K файлів**
+```bash
+Finding test files...
+Files not found, generating...
+Created 100000 files
+
+Keywords to search: ['python', 'data', 'algorithm']
+
+================================================================================
+Search using threads:
+Number of threads: 12
+
+Search results (Threading):
+python: found in 98024 places
+data: found in 98005 places
+algorithm: found in 97981 places
+Execution time (Threading): 27.4087 seconds
+
+================================================================================
+Search using processes:
+Number of processes: 12
+
+Search results (Multiprocessing):
+python: found in 98024 places
+data: found in 98005 places
+algorithm: found in 97981 places
+Execution time (Multiprocessing): 0.5255 seconds
+```
+
 ### Ресурси
 - [main.py](./main.py)
+- [file_generator.py](./file_generator.py)
 
 ## Додатково
 - [Домашнє завдання до модуля "Конкурентність та паралелізм"](https://www.edu.goit.global/uk/learn/25315460/19336208/21189597/homework)
