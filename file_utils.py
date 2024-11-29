@@ -107,7 +107,7 @@ def create_file_thread_worker(
 def create_test_files_and_folders(
     base_dir: str = "test_search_files",
     num_files: int = 50,
-    parallel_method: str = "multiprocessing",
+    parallel_method: str = Methods.MULTIPROCESSING.value,
 ) -> List[str]:
     """
     Create test files and folders using parallel methods.
@@ -212,6 +212,35 @@ def find_all_files(base_dir: str = "test_search_files") -> List[str]:
         for file in files:
             all_files.append(os.path.join(root, file))
     return all_files
+
+
+def search_keywords_in_file(
+    file_path: str, keywords: List[str]
+) -> Dict[str, List[str]]:
+    """
+    Search for keywords in a specific file.
+    params:
+        file_path: Path to the file
+        keywords: List of keywords to search for
+    return:
+        Dictionary of found keywords and their locations
+    """
+
+    results = {keyword: [] for keyword in keywords}
+
+    try:
+        with open(file_path, "r", encoding="utf-8") as file:
+            for line_num, line in enumerate(file, 1):
+                for keyword in keywords:
+                    if keyword.lower() in line.lower():
+                        results[keyword].append(f"{file_path}:line {line_num}")
+    except FileNotFoundError as e:
+        print(f"File not found: {file_path}")
+    except IOError as e:
+        print(f"IO error processing file {file_path}: {e}")
+
+    return {k: v for k, v in results.items() if v}
+
 
 def main():
     # Demonstration of parallel file creation
