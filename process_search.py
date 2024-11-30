@@ -17,11 +17,14 @@ def process_search(
     """
     process_results = {}
     for file in files:
-        file_results = search_keywords_in_file(file, keywords)
-        for keyword, locations in file_results.items():
-            if keyword not in process_results:
-                process_results[keyword] = []
-            process_results[keyword].extend(locations)
+        try:
+            file_results = search_keywords_in_file(file, keywords)
+            for keyword, locations in file_results.items():
+                if keyword not in process_results:
+                    process_results[keyword] = []
+                process_results[keyword].extend(locations)
+        except Exception as e:
+            print(f"Error processing file {file}: {e}")
 
     result_queue.put(process_results)
 

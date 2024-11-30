@@ -80,6 +80,7 @@ def create_file_thread_worker(
     """
 
     created_files = []
+    buffer_size = 1024 * 1024  # 1MB buffer size
 
     for file_info in files_to_create:
         # Full file path
@@ -91,9 +92,12 @@ def create_file_thread_worker(
         # Generate text
         text = generate_random_text()
 
-        # Create file
+        # Create file with buffering
         with open(file_path, "w", encoding="utf-8") as f:
-            f.write(text)
+            start = 0
+            while start < len(text):
+                f.write(text[start:start + buffer_size])
+                start += buffer_size
 
         created_files.append(file_path)
 
@@ -225,15 +229,22 @@ def search_keywords_in_file(
     return:
         Dictionary of found keywords and their locations
     """
-
     results = {keyword: [] for keyword in keywords}
+    buffer_size = 1024 * 1024  # 1MB buffer size
 
     try:
         with open(file_path, "r", encoding="utf-8") as file:
-            for line_num, line in enumerate(file, 1):
-                for keyword in keywords:
-                    if keyword.lower() in line.lower():
-                        results[keyword].append(f"{file_path}:line {line_num}")
+            line_num = 0
+            while True:
+                buffer = file.read(buffer_size)
+                if not buffer:
+                    break
+                lines = buffer.splitlines(keepends=True)
+                for line in lines:
+                    line_num += 1
+                    for keyword in keywords:
+                        if keyword.lower() in line.lower():
+                            results[keyword].append(f"{file_path}:line {line_num}")
     except FileNotFoundError as e:
         print(f"File not found: {file_path}")
     except IOError as e:
