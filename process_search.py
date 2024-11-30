@@ -4,7 +4,7 @@ from typing import List, Dict
 from file_utils import search_keywords_in_file
 
 def process_search(
-    files: List[str], keywords: List[str], result_queue: multiprocessing.Queue
+    files: List[str], keywords: List[str], result_queue: multiprocessing.Queue, logger=None
 ) -> Dict[str, List[str]]:
     """
     Multiprocessing keyword search.
@@ -18,19 +18,34 @@ def process_search(
     process_results = {}
     for file in files:
         try:
-            file_results = search_keywords_in_file(file, keywords)
+            if logger:
+                logger.info(f"Processing file: {file}")
+            else:
+                print(f"Processing file: {file}")
+                
+            file_results = search_keywords_in_file(file, keywords, logger=logger)
             for keyword, locations in file_results.items():
                 if keyword not in process_results:
                     process_results[keyword] = []
                 process_results[keyword].extend(locations)
+                
+            if logger:
+                logger.info(f"Finished processing file: {file}")
+            else:
+                print(f"Finished processing file: {file}")
+                
         except Exception as e:
-            print(f"Error processing file {file}: {e}")
+            error_message = f"Error processing file {file}: {e}"
+            if logger:
+                logger.error(error_message)
+            else:
+                print(error_message)
 
     result_queue.put(process_results)
 
 
 def parallel_file_search_multiprocessing(
-    file_paths: List[str], keywords: List[str], num_processes: int = None
+    file_paths: List[str], keywords: List[str], num_processes: int = None, logger=None
 ) -> Dict[str, List[str]]:
     """
     Parallel search using processes.
@@ -38,12 +53,16 @@ def parallel_file_search_multiprocessing(
         file_paths: List of file paths
         keywords: Keywords to search for
         num_processes: Number of processes (default is number of CPUs)
+        logger: Logger for logging messages
     return:
         Result dictionary
     """
     if num_processes is None:
         num_processes = os.cpu_count()
-        print(f"Number of processes: {num_processes}")
+        if logger:
+            logger.info(f"Number of processes: {num_processes}")
+        else:
+            print(f"Number of processes: {num_processes}")
 
     # Split files among processes
     files_per_process = [file_paths[i::num_processes] for i in range(num_processes)]
@@ -52,8 +71,12 @@ def parallel_file_search_multiprocessing(
     processes = []
 
     for process_files in files_per_process:
+        if logger:
+            logger.info(f"Starting process for files: {process_files}")
+        else:
+            print(f"Starting process for files: {process_files}")
         process = multiprocessing.Process(
-            target=process_search, args=(process_files, keywords, result_queue)
+            target=process_search, args=(process_files, keywords, result_queue, logger)
         )
         process.start()
         processes.append(process)
@@ -70,6 +93,10 @@ def parallel_file_search_multiprocessing(
     # Wait for all processes to finish
     for process in processes:
         process.join()
+        if logger:
+            logger.info(f"Process {process.pid} finished")
+        else:
+            print(f"Process {process.pid} finished")
 
     return results
 

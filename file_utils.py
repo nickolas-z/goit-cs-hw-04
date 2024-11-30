@@ -67,6 +67,7 @@ def create_file_thread_worker(
     files_to_create: List[Dict[str, str]],
     result_queue: multiprocessing.Queue = None,
     lock: threading.Lock = None,
+    logger=None,
 ) -> List[str]:
     """
     Thread worker for creating files.
@@ -75,9 +76,12 @@ def create_file_thread_worker(
         files_to_create: List of files to create
         result_queue: Queue for passing results (optional)
         lock: Lock for synchronization (optional)
+        logger: Logger for logging messages (optional)
     return:
         List of created file paths
     """
+    if logger:
+        logger.info(f"Thread worker started for base_dir: {base_dir}")
 
     created_files = []
     buffer_size = 1024 * 1024  # 1MB buffer size
@@ -100,10 +104,17 @@ def create_file_thread_worker(
                 start += buffer_size
 
         created_files.append(file_path)
+        if logger:
+            logger.info(f"Created file: {file_path}")
 
     # If a result queue is passed, add the result
     if result_queue is not None:
         result_queue.put(created_files)
+        if logger:
+            logger.info(f"Added created files to result queue")
+
+    if logger:
+        logger.info(f"Thread worker finished for base_dir: {base_dir}")
 
     return created_files
 
@@ -112,6 +123,7 @@ def create_test_files_and_folders(
     base_dir: str = "test_search_files",
     num_files: int = 50,
     parallel_method: str = Methods.MULTIPROCESSING.value,
+    logger=None,
 ) -> List[str]:
     """
     Create test files and folders using parallel methods.
@@ -119,15 +131,20 @@ def create_test_files_and_folders(
         base_dir: Base directory for creating files
         num_files: Number of files to generate
         parallel_method: Parallel processing method ('threading' or 'multiprocessing')
+        logger: Logger for logging messages (optional)
     return:
         List of created file paths
     """
     # Remove existing directory if it exists
     if os.path.exists(base_dir):
         shutil.rmtree(base_dir)
+        if logger:
+            logger.info(f"Removed existing directory: {base_dir}")
 
     # Create base directory
     os.makedirs(base_dir, exist_ok=True)
+    if logger:
+        logger.info(f"Created base directory: {base_dir}")
 
     # Subdirectories
     subdirs = ["subdir1", "subdir2", "subdir3"]
@@ -148,8 +165,13 @@ def create_test_files_and_folders(
 
         files_to_create.append({"subdir": random_subdir, "filename": filename})
 
+    if logger:
+        logger.info(f"Prepared list of {num_files} files to create")
+
     # Determine number of threads/processes
     num_workers = os.cpu_count()
+    if logger:
+        logger.info(f"Using {num_workers} workers for parallel processing")
 
     # Distribute files among threads/processes
     files_per_worker = [files_to_create[i::num_workers] for i in range(num_workers)]
@@ -176,6 +198,9 @@ def create_test_files_and_folders(
         for thread in threads:
             thread.join()
 
+        if logger:
+            logger.info("Completed file creation using threading")
+
     elif parallel_method == Methods.MULTIPROCESSING.value:
         # Multiprocessing method
         result_queue = multiprocessing.Queue()
@@ -197,20 +222,28 @@ def create_test_files_and_folders(
         for process in processes:
             process.join()
 
+        if logger:
+            logger.info("Completed file creation using multiprocessing")
+
     else:
         # Sequential method as a fallback
         all_created_files = create_file_thread_worker(base_dir, files_to_create)
+        if logger:
+            logger.info("Completed file creation using sequential method")
 
     return all_created_files
 
-def find_all_files(base_dir: str = "test_search_files") -> List[str]:
+def find_all_files(base_dir: str = "test_search_files", logger=None) -> List[str]:
     """
     Find all files in the given directory.
     params:
         base_dir: Base directory to search for files
+        logger: Logger for logging messages (optional)
     return:
         List of all found file paths
     """
+    if logger:
+        logger.info(f"Searching for all files in directory: {base_dir}")
     all_files = []
     for root, _, files in os.walk(base_dir):
         for file in files:
@@ -219,13 +252,14 @@ def find_all_files(base_dir: str = "test_search_files") -> List[str]:
 
 
 def search_keywords_in_file(
-    file_path: str, keywords: List[str]
+    file_path: str, keywords: List[str], logger=None
 ) -> Dict[str, List[str]]:
     """
     Search for keywords in a specific file.
     params:
         file_path: Path to the file
         keywords: List of keywords to search for
+        logger: Logger for logging messages (optional)
     return:
         Dictionary of found keywords and their locations
     """
@@ -245,10 +279,18 @@ def search_keywords_in_file(
                     for keyword in keywords:
                         if keyword.lower() in line.lower():
                             results[keyword].append(f"{file_path}:line {line_num}")
+                            if logger:
+                                logger.info(f"Found keyword '{keyword}' in {file_path} at line {line_num}")
     except FileNotFoundError as e:
-        print(f"File not found: {file_path}")
+        if logger:
+            logger.error(f"File not found: {file_path}")
+        else:
+            print(f"File not found: {file_path}")
     except IOError as e:
-        print(f"IO error processing file {file_path}: {e}")
+        if logger:
+            logger.error(f"IO error processing file {file_path}: {e}")
+        else:
+            print(f"IO error processing file {file_path}: {e}")
 
     return {k: v for k, v in results.items() if v}
 
